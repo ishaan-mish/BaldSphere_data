@@ -160,6 +160,7 @@
     </style>
 </head>
 <body>
+
     <header>
         <h1>Brain Action Data</h1>
         <p>Input brain-related actions and download them in CSV format</p>
@@ -216,11 +217,10 @@
             });
 
             const result = await response.text();
-            alert(result);
-            form.reset();
+            alert(result);  // Inform the user about success or error
+            form.reset();  // Reset form fields after submission
         });
     </script>
-        <script src="script.js"></script>
 
 </body>
 </html>

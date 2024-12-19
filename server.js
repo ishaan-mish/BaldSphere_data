@@ -1,53 +1,79 @@
 const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const cors = require('cors');
+const mongoose = require('mongoose');
+const { parse } = require('json2csv'); // Correcting the import
 
 const app = express();
 const PORT = 3000;
 
-// Middleware
 app.use(express.json());
-app.use(express.static('public')); // Serve frontend files from 'public' folder
-app.use(cors()); // Enable CORS for API calls
+app.use(express.static('public')); // Serve static files (CSS, JS, HTML)
+
+// MongoDB connection URI
+const uri = "mongodb+srv://ishaanmishra507:Marja%40918117@cluster0.0dff6wr.mongodb.net/baldsphere?retryWrites=true&w=majority";
+mongoose.connect(uri)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((err) => {
+    console.error('MongoDB connection error:', err);
+  });
+
+// Define Schema and Model
+const datasetSchema = new mongoose.Schema({
+  word: String,
+  action: String,
+  area_of_brain: String,
+});
+
+const Dataset = mongoose.model('Dataset', datasetSchema, 'dataset');
 
 // Route to handle form submission
 app.post('/submit', (req, res) => {
-    const { word, action, area_of_brain } = req.body;
+  const { word, action, area_of_brain } = req.body;
 
-    if (!word || !action || !area_of_brain) {
-        return res.status(400).send('All fields are required!');
-    }
+  if (!word || !action || !area_of_brain) {
+    return res.status(400).send('All fields are required!');
+  }
 
-    // Append data to a CSV file
-    const data = `${word},${action},${area_of_brain}\n`;
-    fs.appendFile('data.csv', data, (err) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).send('Error saving data!');
-        }
+  // Create a new document in the "dataset" collection
+  const newData = new Dataset({ word, action, area_of_brain });
 
-        res.send('Data saved successfully!');
+  newData.save()
+    .then(() => {
+      res.send('Data saved successfully!');
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send('Error saving data!');
     });
 });
 
-// Route to serve the CSV file for download
-app.get('/download', (req, res) => {
-    const filePath = path.resolve(__dirname, 'data.csv');
-    
-    // Check if the file exists before attempting to send it
-    if (fs.existsSync(filePath)) {
-        res.download(filePath, 'data.csv', (err) => {
-            if (err) {
-                console.error('Error while sending file:', err);
-            }
-        });
-    } else {
-        res.status(404).send('File not found!');
-    }
+// Route to extract data and generate CSV for download
+app.get('/download', async (req, res) => {
+  try {
+    const data = await Dataset.find(); // Fetch data from the dataset collection
+
+    // Format the data to only include 'word', 'action', and 'area_of_brain' fields
+    const formattedData = data.map(item => ({
+      word: item.word,
+      action: item.action,
+      area_of_brain: item.area_of_brain,
+    }));
+
+    // Convert to CSV
+    const csv = parse(formattedData);
+
+    // Send CSV as downloadable file
+    res.header('Content-Type', 'text/csv');
+    res.attachment('data.csv');
+    res.send(csv);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Error generating CSV!');
+  }
 });
 
-// Start server
+// Start the server
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
