@@ -1,6 +1,7 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
 const PORT = 3000;
@@ -8,6 +9,7 @@ const PORT = 3000;
 // Middleware
 app.use(express.json());
 app.use(express.static('public')); // Serve frontend files from 'public' folder
+app.use(cors()); // Enable CORS for API calls
 
 // Route to handle form submission
 app.post('/submit', (req, res) => {
