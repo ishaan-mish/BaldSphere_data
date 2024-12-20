@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { parse } = require('json2csv'); // Correcting the import
+const path = require('path');
 
 const app = express();
 const PORT = 3000;
@@ -9,7 +10,7 @@ app.use(express.json());
 app.use(express.static('public')); // Serve static files (CSS, JS, HTML)
 
 // MongoDB connection URI
-const uri = "mongodb+srv://ishaanmishra507:Marja%40918117@cluster0.0dff6wr.mongodb.net/baldsphere?retryWrites=true&w=majority";
+const uri = "mongodb+srv://mishraishaan31:Mahi%40918117@cluster0.r1s1v.mongodb.net/baldsphere?retryWrites=true&w=majority";
 mongoose.connect(uri)
   .then(() => {
     console.log('Connected to MongoDB');
@@ -71,6 +72,11 @@ app.get('/download', async (req, res) => {
     console.error(err);
     res.status(500).send('Error generating CSV!');
   }
+});
+
+// Route to serve index.html explicitly
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start the server
