@@ -7,7 +7,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use(express.static('public')); // Serve static files (CSS, JS, HTML)
+app.use(express.static('public')); // Serve static files (CSS, JS)
 
 // MongoDB connection URI
 const uri = "mongodb+srv://mishraishaan31:Mahi%40918117@cluster0.r1s1v.mongodb.net/baldsphere?retryWrites=true&w=majority";
@@ -76,7 +76,7 @@ app.get('/download', async (req, res) => {
 
 // Route to serve index.html explicitly
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html')); // Updated to reflect the new location
 });
 
 // Start the server
