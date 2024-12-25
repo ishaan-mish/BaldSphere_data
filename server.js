@@ -1,16 +1,14 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { parse } = require('json2csv'); // Correcting the import
+const { parse } = require('json2csv');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
-
-app.use(express.json());
-app.use(express.static('public')); // Serve static files (CSS, JS)
+const PORT = process.env.PORT || 3000;
 
 // MongoDB connection URI
 const uri = "mongodb+srv://mishraishaan31:Mahi%40918117@cluster0.r1s1v.mongodb.net/baldsphere?retryWrites=true&w=majority";
+
 mongoose.connect(uri)
   .then(() => {
     console.log('Connected to MongoDB');
@@ -26,7 +24,11 @@ const datasetSchema = new mongoose.Schema({
   area_of_brain: String,
 });
 
-const Dataset = mongoose.model('Dataset', datasetSchema, 'dataset');
+const Dataset = mongoose.model('Dataset', datasetSchema);
+
+// Middleware to serve static files (CSS, JS)
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));  // Serve the 'public' folder, where your index.html should reside
 
 // Route to handle form submission
 app.post('/submit', (req, res) => {
@@ -53,33 +55,37 @@ app.post('/submit', (req, res) => {
 app.get('/download', async (req, res) => {
   try {
     const data = await Dataset.find(); // Fetch data from the dataset collection
+    if (!data.length) {
+      return res.status(404).send('No data available to download!');
+    }
 
-    // Format the data to only include 'word', 'action', and 'area_of_brain' fields
+    // Format the data to include 'word', 'action', and 'area_of_brain' fields
     const formattedData = data.map(item => ({
       word: item.word,
       action: item.action,
       area_of_brain: item.area_of_brain,
     }));
 
-    // Convert to CSV
+    // Convert to CSV using json2csv
     const csv = parse(formattedData);
 
-    // Send CSV as downloadable file
     res.header('Content-Type', 'text/csv');
-    res.attachment('data.csv');
-    res.send(csv);
+    res.attachment('data.csv');  // Suggested filename for the download
+    res.send(csv);  // Send the CSV file as the response
   } catch (err) {
     console.error(err);
     res.status(500).send('Error generating CSV!');
   }
 });
 
-// Route to serve index.html explicitly
+// Route to serve index.html (make sure it's in the 'public' folder)
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html')); // Updated to reflect the new location
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+module.exports = app;
